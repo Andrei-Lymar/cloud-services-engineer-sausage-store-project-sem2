@@ -7,9 +7,9 @@ on:
 
 env:
   NEXUS_HELM_REPO: ${{ secrets.NEXUS_HELM_REPO }}
-  NEXUS_USER: ${{ secrets.NEXUS_USER }}
-  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-  NAMESPACE: ${{ secrets.NAMESPACE }}
+  NEXUS_HELM_REPO_USER: ${{ secrets.NEXUS_HELM_REPO_USER }}
+  NEXUS_HELM_REPO_PASSWORD: ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
+  SAUSAGE_STORE_NAMESPACE: ${{ secrets.SAUSAGE_STORE_NAMESPACE }}
   KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
 
 jobs:
@@ -73,8 +73,8 @@ jobs:
       - name: Configure Helm Repository (Nexus)
         run: |
           helm repo add chartmuseum "${{ env.NEXUS_HELM_REPO }}" \
-            --username="${{ env.NEXUS_USER }}" \
-            --password="${{ env.NEXUS_PASSWORD }}"
+            --username="${{ env.NEXUS_HELM_REPO_USER }}" \
+            --password="${{ env.NEXUS_HELM_REPO_PASSWORD }}"
           helm repo update
 
       - name: Helm Lint
@@ -95,8 +95,8 @@ jobs:
           helm dependency update ./sausage-store-chart
           helm package ./sausage-store-chart --destination ./packaged-chart
           helm cm-push ./packaged-chart/sausage-store-*.tgz chartmuseum \
-            --username="${{ env.NEXUS_USER }}" \
-            --password="${{ env.NEXUS_PASSWORD }}" \
+            --username="${{ env.NEXUS_HELM_REPO_USER }}" \
+            --password="${{ env.NEXUS_HELM_REPO_PASSWORD }}" \
             --context-path="/repository/ly_hostedhelm"
 
   deploy_helm_chart_to_kubernetes:
@@ -119,19 +119,15 @@ jobs:
       - name: Add Helm Repository
         run: |
           helm repo add chartmuseum "${{ env.NEXUS_HELM_REPO }}" \
-            --username "${{ env.NEXUS_USER }}" \
-            --password "${{ env.NEXUS_PASSWORD }}"
+            --username "${{ env.NEXUS_HELM_REPO_USER }}" \
+            --password "${{ env.NEXUS_HELM_REPO_PASSWORD }}"
           helm repo update
-
-      - name: Delete existing ConfigMap if present
-        run: |
-          kubectl delete configmap sausage-store-backend-report-conf --namespace $SAUSAGE_STORE_NAMESPACE --ignore-not-found
 
       - name: Deploy Helm Chart
         run: |
           helm upgrade --install sausage-store chartmuseum/sausage-store-chart \
             --version ${{ needs.add_helm_chart_to_nexus.outputs.chart_version }} \
-            --namespace $NAMESPACE \
+            --namespace $SAUSAGE_STORE_NAMESPACE \
             --set-string backend.image_tag="latest" \
             --set-string frontend.image_tag="latest" \
             --set-string backend-report.image_tag="latest"
