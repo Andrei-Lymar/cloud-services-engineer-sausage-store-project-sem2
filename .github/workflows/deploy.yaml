@@ -127,7 +127,7 @@ jobs:
         run: |
           helm upgrade --install sausage-store chartmuseum/sausage-store-chart \
             --version ${{ needs.add_helm_chart_to_nexus.outputs.chart_version }} \
-            --namespace $SAUSAGE_STORE_NAMESPACE \
+            --namespace $NAMESPACE \
             --set-string backend.image_tag="latest" \
             --set-string frontend.image_tag="latest" \
             --set-string backend-report.image_tag="latest"
