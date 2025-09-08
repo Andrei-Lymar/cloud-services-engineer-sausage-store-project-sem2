@@ -123,6 +123,10 @@ jobs:
             --password "${{ env.NEXUS_PASSWORD }}"
           helm repo update
 
+      - name: Delete existing ConfigMap if present
+        run: |
+          kubectl delete configmap sausage-store-backend-report-conf --namespace $SAUSAGE_STORE_NAMESPACE --ignore-not-found
+
       - name: Deploy Helm Chart
         run: |
           helm upgrade --install sausage-store chartmuseum/sausage-store-chart \
